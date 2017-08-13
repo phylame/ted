@@ -1,0 +1,120 @@
+{
+  "menubar": [
+    {
+      "id": "menu.file",
+      "items": [
+        "newFile",
+        "openFile",
+        "saveFile",
+        "saveAsFile",
+        null,
+        "refreshFile",
+        {
+          "id": "toggleReadonly",
+          "style": "check"
+        },
+        null,
+        "fileDetails",
+        null,
+        "print",
+        "settings",
+        null,
+        "exitApp"
+      ]
+    },
+    {
+      "id": "menu.edit",
+      "items": [
+        "undo",
+        "redo",
+        null,
+        "cut",
+        "copy",
+        "paste",
+        "delete",
+        "deleteLine",
+        null,
+        {
+          "id": "menu.find",
+          "items": [
+            "find",
+            "replace",
+            "findNext",
+            "findPrevious"
+          ]
+        },
+        "selectAll",
+        null,
+        "joinLines",
+        "duplicateText",
+        "toggleCase",
+        "moveLineDown",
+        "moveLineUp"
+      ]
+    },
+    {
+      "id": "menu.navigate",
+      "items": [
+        "gotoPosition",
+        null,
+        "backPosition",
+        "forwardPosition"
+      ]
+    },
+    {
+      "id": "menu.view",
+      "items": [
+        {
+          "id": "showToolBar",
+          "style": "check"
+        },
+        {
+          "id": "showStatusBar",
+          "style": "check"
+        }
+      ]
+    },
+    {
+      "id": "menu.tools",
+      "items": [
+      ]
+    },
+    {
+      "id": "menu.window",
+      "items": [
+        {
+          "id": "menu.tabs",
+          "items": [
+            "nextTab",
+            "previousTab",
+            null,
+            "closeActiveTab",
+            "closeOtherTabs",
+            "closeAllTabs",
+            "closeUnmodifiedTabs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "menu.help",
+      "items": [
+        "findAction",
+        "helpContents",
+        "aboutApp"
+      ]
+    }
+  ],
+  "toolbar": [
+    "newFile",
+    "openFile",
+    "saveFile",
+    null,
+    "undo",
+    "redo",
+    null,
+    "cut",
+    "copy",
+    "paste"
+  ]
+}
