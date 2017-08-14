@@ -13,9 +13,6 @@ import javax.swing.Action
 import javax.swing.JScrollPane
 import javax.swing.JTabbedPane
 import javax.swing.JTextArea
-import javax.swing.event.DocumentEvent
-import javax.swing.event.DocumentListener
-import javax.swing.undo.UndoManager
 
 object Editor : JTabbedPane() {
     init {
@@ -91,37 +88,15 @@ object Editor : JTabbedPane() {
 }
 
 class Tab(val title: String) : JScrollPane() {
-    private val undoManager = UndoManager()
     private val textArea = JTextArea()
-    private var isModified = false
+    private val support: TextSupport
     private var file: File? = null
 
     init {
         setViewportView(textArea)
+        support = TextSupport(textArea)
         textArea.font = textArea.font.deriveFont(EditorSettings.fontSize.toFloat())
-        textArea.addCaretListener {
-            updateActions()
-            updateCursor()
-        }
-        textArea.document.addUndoableEditListener {
-            undoManager.addEdit(it.edit)
-            updateActions()
-        }
-        textArea.document.addDocumentListener(object : DocumentListener {
-            override fun changedUpdate(e: DocumentEvent) {
-                println(e)
-            }
 
-            override fun insertUpdate(e: DocumentEvent) {
-                isModified = true
-                updateActions()
-            }
-
-            override fun removeUpdate(e: DocumentEvent) {
-                isModified = true
-                updateActions()
-            }
-        })
     }
 
     internal fun undo() {
@@ -200,6 +175,8 @@ class Tab(val title: String) : JScrollPane() {
     }
 }
 
+
 object EditorSettings : AppSettings("editor.cfg") {
     var fontSize by map(14)
 }
+

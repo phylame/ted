@@ -36,6 +36,6 @@
     <orderEntry type="library" name="Maven: org.json:json:20170516" level="project" />
     <orderEntry type="library" name="Maven: com.jgoodies:jgoodies-looks:2.7.0" level="project" />
     <orderEntry type="library" name="Maven: com.jgoodies:jgoodies-common:1.8.1" level="project" />
-    <orderEntry type="library" name="Maven: pw.phylame.3rdpart:beautyeye:3.7" level="project" />
+    <orderEntry type="library" name="Maven: pw.phylame.3rdparty:beautyeye:3.7" level="project" />
   </component>
 </module>

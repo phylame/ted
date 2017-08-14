@@ -31,7 +31,7 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>pw.phylame.3rdpart</groupId>
+            <groupId>pw.phylame.3rdparty</groupId>
             <artifactId>beautyeye</artifactId>
             <version>3.7</version>
         </dependency>

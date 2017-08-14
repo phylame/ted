@@ -29,7 +29,7 @@ object Form : IForm(tr("app.name")) {
         statusBar?.add(JSeparator(), BorderLayout.PAGE_START)
         statusBar?.add(Indicator, BorderLayout.LINE_END)
         statusBar?.border = BorderFactory.createEmptyBorder(0, 2, 0, 2)
-        size = 1244 x 700
+        size = 640 x 480
         setLocationRelativeTo(null)
         statusText = tr("ready")
     }
