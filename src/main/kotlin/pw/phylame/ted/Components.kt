@@ -18,38 +18,22 @@ val JTextArea.column get() = caretPosition - getLineStartOffset(row)
 val JTextArea.row get() = getLineOfOffset(caretPosition)
 
 abstract class TextSupport(text: JTextArea) : CaretListener, UndoableEditListener {
+    val canUndo get() = undo.canUndo()
+
+    val undoName: String get() = undo.undoPresentationName
+
+    val canRedo get() = undo.canRedo()
+
+    val redoName: String get() = undo.redoPresentationName
+
     var isModified = false
         set(value) {
-            if (value != field) {
-                field = value
-                if (!value) { // not modified
-                    edit = undo.nextUndo
-                }
-                textUpdated(false)
+            field = value
+            if (!value) { // not modified
+                edit = undo.nextUndo
             }
+            textUpdated(value)
         }
-
-    val undoAction = {
-        if (undo.canUndo()) {
-            undo.undo()
-            if (!isModified) {
-                textUpdated(true)
-            } else if (edit === undo.nextUndo) {
-                isModified = false
-            }
-        }
-    }
-
-    val redoAction = {
-        if (undo.canRedo()) {
-            undo.redo()
-            if (!isModified) {
-                textUpdated(true)
-            } else if (edit === undo.nextUndo) {
-                isModified = false
-            }
-        }
-    }
 
     init {
         text.addCaretListener(this)
@@ -59,6 +43,24 @@ abstract class TextSupport(text: JTextArea) : CaretListener, UndoableEditListene
     abstract fun textUpdated(modified: Boolean)
 
     abstract fun cursorUpdated(row: Int, column: Int, selection: Int)
+
+    fun undo() {
+        undo.undo()
+        if (!isModified) {
+            textUpdated(true)
+        } else if (edit === undo.nextUndo) {
+            isModified = false
+        }
+    }
+
+    fun redo() {
+        undo.redo()
+        if (!isModified) {
+            textUpdated(true)
+        } else if (edit === undo.nextUndo) {
+            isModified = false
+        }
+    }
 
     private var dot = 0
     private var mark = 0
@@ -80,7 +82,7 @@ abstract class TextSupport(text: JTextArea) : CaretListener, UndoableEditListene
     }
 
     class UndoSupport : UndoManager() {
-        val nextUndo get() = this.editToBeUndone()
+        val nextUndo: UndoableEdit? get() = editToBeUndone()
     }
 }
 

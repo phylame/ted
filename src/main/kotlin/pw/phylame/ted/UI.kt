@@ -58,7 +58,7 @@ object Form : IForm(tr("app.name")) {
 }
 
 object Indicator : JPanel() {
-    val cursor: JLabel = JLabel()
+    val cursor: JLabel = JLabel("n/a")
 
     init {
         layout = BoxLayout(this, BoxLayout.LINE_AXIS)

@@ -28,6 +28,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Maven: pw.phylame.3rdparty:beautyeye:3.7" level="project" />
     <orderEntry type="library" name="Maven: pw.phylame.mala:mala-ixin:2.0" level="project" />
     <orderEntry type="library" name="Maven: pw.phylame.mala:mala-core:2.0" level="project" />
     <orderEntry type="library" name="Maven: pw.phylame.util:commons:2.2.0" level="project" />

@@ -4,7 +4,6 @@ import mala.core.App
 import mala.core.AppSettings
 import mala.core.map
 import mala.ixin.Command
-import mala.ixin.isSelected
 import pw.phylame.ted.Editor.addChangeListener
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
@@ -94,20 +93,32 @@ class Tab(val title: String) : JScrollPane() {
 
     init {
         setViewportView(textArea)
-        support = TextSupport(textArea)
-        textArea.font = textArea.font.deriveFont(EditorSettings.fontSize.toFloat())
+        textArea.addPropertyChangeListener {
+            when (it.propertyName) {
+                "editable" -> {
 
+                }
+            }
+        }
+        support = object : TextSupport(textArea) {
+            override fun textUpdated(modified: Boolean) {
+                updateActions()
+            }
+
+            override fun cursorUpdated(row: Int, column: Int, selection: Int) {
+                Indicator.updateCursor(row + 1, column + 1, selection)
+                updateActions()
+            }
+        }
+        textArea.font = textArea.font.deriveFont(EditorSettings.fontSize.toFloat())
     }
 
     internal fun undo() {
-        undoManager.undo()
-        if (!undoManager.canUndo()) {
-            isModified = false
-        }
+        support.undo()
     }
 
     internal fun redo() {
-        undoManager.redo()
+        support.redo()
     }
 
     internal fun cut() {
@@ -123,7 +134,7 @@ class Tab(val title: String) : JScrollPane() {
     }
 
     internal fun delete() {
-        textArea.document.remove(textArea.selectionStart, textArea.selectionEnd - textArea.selectionStart)
+        textArea.replaceSelection(null)
     }
 
     internal fun selectAll() {
@@ -136,27 +147,26 @@ class Tab(val title: String) : JScrollPane() {
     }
 
     internal fun onActivated() {
+        Indicator.updateCursor(1, 1, 0)
         textArea.requestFocus()
         updateActions()
-        updateCursor()
     }
 
     private fun updateActions() {
         val editable = textArea.isEditable
-        Form.actions["saveFile"]?.isEnabled = isModified || file == null
-        Form.actions["refreshFile"]?.isEnabled = editable && file != null
-        Form.actions["fileDetails"]?.isEnabled = editable && file != null
-        Form.actions["toggleReadonly"]?.isSelected = !editable
+        Form.actions["saveFile"]?.isEnabled = support.isModified || file == null
+//        Form.actions["refreshFile"]?.isEnabled = editable && file != null
+//        Form.actions["fileDetails"]?.isEnabled = editable && file != null
 
         Form.actions["undo"]?.apply {
-            isEnabled = editable && undoManager.canUndo()
-            putValue(Action.NAME, undoManager.undoPresentationName)
-            putValue(Action.SHORT_DESCRIPTION, undoManager.undoPresentationName)
+            isEnabled = editable && support.canUndo
+            putValue(Action.NAME, support.undoName)
+            putValue(Action.SHORT_DESCRIPTION, support.undoName)
         }
         Form.actions["redo"]?.apply {
-            isEnabled = editable && undoManager.canRedo()
-            putValue(Action.NAME, undoManager.redoPresentationName)
-            putValue(Action.SHORT_DESCRIPTION, undoManager.redoPresentationName)
+            isEnabled = editable && support.canRedo
+            putValue(Action.NAME, support.redoName)
+            putValue(Action.SHORT_DESCRIPTION, support.redoName)
         }
         val hasSelection = textArea.selectionEnd != textArea.selectionStart
         Form.actions["cut"]?.isEnabled = editable && hasSelection
@@ -165,16 +175,7 @@ class Tab(val title: String) : JScrollPane() {
         Form.actions["paste"]?.isEnabled = editable && contents?.isDataFlavorSupported(DataFlavor.stringFlavor) ?: false
         Form.actions["delete"]?.isEnabled = editable && hasSelection
     }
-
-    private fun updateCursor() {
-        val position = textArea.caretPosition
-        val line = textArea.getLineOfOffset(position)
-        val column = position - textArea.getLineStartOffset(line)
-        val selection = textArea.selectionEnd - textArea.selectionStart
-        Indicator.updateCursor(line + 1, column + 1, selection)
-    }
 }
-
 
 object EditorSettings : AppSettings("editor.cfg") {
     var fontSize by map(14)
