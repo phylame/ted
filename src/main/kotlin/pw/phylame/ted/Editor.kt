@@ -1,48 +1,63 @@
 package pw.phylame.ted
 
-import mala.core.App
-import mala.core.AppSettings
-import mala.core.map
+import mala.core.App.tr
 import mala.ixin.Command
-import pw.phylame.ted.Editor.addChangeListener
+import org.jdesktop.swingx.JXLabel
+import org.jdesktop.swingx.JXPanel
+import java.awt.Font
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
 import java.io.File
-import javax.swing.Action
-import javax.swing.JScrollPane
-import javax.swing.JTabbedPane
-import javax.swing.JTextArea
+import javax.swing.*
 
-object Editor : JTabbedPane() {
+object Editor : ITabbedPane() {
     init {
         border = null
         isFocusable = false
         tabLayoutPolicy = SCROLL_TAB_LAYOUT
-        addChangeListener {
-            updateActions()
-            ((it.source as Editor).selectedComponent as? Tab)?.apply {
-                onActivated()
-                Form.title = "$title - ${App.tr("app.name")} v${Ted.version}"
+        addTabListener(object : TabListener {
+            override fun tabCreated(e: TabEvent) {
+                updateTabActions()
             }
-        }
+
+            override fun tabActivated(e: TabEvent) {
+                updateTitle(e.component as Tab)
+            }
+
+            override fun tabClosed(e: TabEvent) {
+                updateTabActions()
+            }
+        })
+    }
+
+    private fun updateTitle(tab: Tab) {
+        val title = tab.title + if (tab.isModified) "*" else ""
+        Form.title = "$title - ${tr("app.name")} v${Ted.version}"
+        tab.header.setTitle(title)
     }
 
     fun newTab(title: String = "Untitled") {
-        addTab(title, Tab(title))
+        val header = TabHeader()
+        val tab = Tab(title, header)
+        tab.addPropertyChangeListener("modified") {
+            updateTitle(it.source as Tab)
+        }
+        addTab(title, tab)
+        setTabComponentAt(tabCount - 1, header)
         selectedIndex = tabCount - 1
     }
 
     fun closeTab(index: Int) {
     }
 
-    private fun updateActions() {
+    private fun updateTabActions() {
         val count = tabCount
-        Form.actions["nextTab"]?.isEnabled = count > 1
-        Form.actions["previousTab"]?.isEnabled = count > 1
-        Form.actions["closeActiveTab"]?.isEnabled = count != 0
-        Form.actions["closeOtherTabs"]?.isEnabled = count > 1
-        Form.actions["closeAllTabs"]?.isEnabled = count != 0
-        Form.actions["closeUnmodifiedTabs"]?.isEnabled = count != 0
+        Form.setEnable("nextTab", count > 1)
+        Form.setEnable("previousTab", count > 1)
+        Form.setEnable("closeActiveTab", count != 0)
+        Form.setEnable("closeOtherTabs", count > 1)
+        Form.setEnable("closeAllTabs", count != 0)
+        Form.setEnable("closeUnmodifiedTabs", count != 0)
     }
 
     @Command
@@ -84,11 +99,32 @@ object Editor : JTabbedPane() {
     fun toggleReadonly() {
         (selectedComponent as? Tab)?.toggleReadonly()
     }
+
+    @Command
+    fun closeActiveTab() {
+        removeTabAt(selectedIndex)
+    }
 }
 
-class Tab(val title: String) : JScrollPane() {
+class TabHeader : JXPanel() {
+    private val label = JXLabel()
+
+    init {
+        isOpaque = false
+        layout = BoxLayout(this, BoxLayout.LINE_AXIS)
+        this += label
+        this += Box.createHorizontalStrut(5)
+        this += Form.actions["closeActiveTab"].toImageButton()
+    }
+
+    fun setTitle(title: String) {
+        label.text = title
+    }
+}
+
+class Tab(val title: String, val header: TabHeader) : JScrollPane() {
     private val textArea = JTextArea()
-    private val support: TextSupport
+    private val undoHelper = UndoHelper()
     private var file: File? = null
 
     init {
@@ -100,25 +136,21 @@ class Tab(val title: String) : JScrollPane() {
                 }
             }
         }
-        support = object : TextSupport(textArea) {
-            override fun textUpdated(modified: Boolean) {
-                updateActions()
-            }
-
-            override fun cursorUpdated(row: Int, column: Int, selection: Int) {
-                Indicator.updateCursor(row + 1, column + 1, selection)
-                updateActions()
-            }
+        textArea.font = Font.getFont("ted.editor.font")
+        textArea.document.addUndoableEditListener(undoHelper)
+        undoHelper.addChangeListener {
+            firePropertyChange("modified", !undoHelper.isModified, undoHelper.isModified)
         }
-        textArea.font = textArea.font.deriveFont(EditorSettings.fontSize.toFloat())
     }
 
+    internal val isModified get() = undoHelper.isModified
+
     internal fun undo() {
-        support.undo()
+        undoHelper.undo()
     }
 
     internal fun redo() {
-        support.redo()
+        undoHelper.redo()
     }
 
     internal fun cut() {
@@ -154,30 +186,25 @@ class Tab(val title: String) : JScrollPane() {
 
     private fun updateActions() {
         val editable = textArea.isEditable
-        Form.actions["saveFile"]?.isEnabled = support.isModified || file == null
-//        Form.actions["refreshFile"]?.isEnabled = editable && file != null
-//        Form.actions["fileDetails"]?.isEnabled = editable && file != null
+        Form.setEnable("saveFile", undoHelper.isModified || file == null)
+//        Form.setEnable("refreshFile", editable && file != null)
+//        Form.setEnable("fileDetails", editable && file != null)
 
         Form.actions["undo"]?.apply {
-            isEnabled = editable && support.canUndo
-            putValue(Action.NAME, support.undoName)
-            putValue(Action.SHORT_DESCRIPTION, support.undoName)
+            isEnabled = editable && undoHelper.canUndo()
+            putValue(Action.NAME, undoHelper.undoPresentationName)
+            putValue(Action.SHORT_DESCRIPTION, undoHelper.undoPresentationName)
         }
         Form.actions["redo"]?.apply {
-            isEnabled = editable && support.canRedo
-            putValue(Action.NAME, support.redoName)
-            putValue(Action.SHORT_DESCRIPTION, support.redoName)
+            isEnabled = editable && undoHelper.canRedo()
+            putValue(Action.NAME, undoHelper.redoPresentationName)
+            putValue(Action.SHORT_DESCRIPTION, undoHelper.redoPresentationName)
         }
         val hasSelection = textArea.selectionEnd != textArea.selectionStart
-        Form.actions["cut"]?.isEnabled = editable && hasSelection
-        Form.actions["copy"]?.isEnabled = editable && hasSelection
+        Form.setEnable("cut", editable && hasSelection)
+        Form.setEnable("copy", editable && hasSelection)
         val contents = Toolkit.getDefaultToolkit().systemClipboard.getContents(null)
-        Form.actions["paste"]?.isEnabled = editable && contents?.isDataFlavorSupported(DataFlavor.stringFlavor) ?: false
-        Form.actions["delete"]?.isEnabled = editable && hasSelection
+        Form.setEnable("paste", editable && contents?.isDataFlavorSupported(DataFlavor.stringFlavor) ?: false)
+        Form.setEnable("delete", editable && hasSelection)
     }
 }
-
-object EditorSettings : AppSettings("editor.cfg") {
-    var fontSize by map(14)
-}
-

@@ -14,6 +14,10 @@
     <groupId>pw.phylame.tools</groupId>
     <description>Simple Text Editor</description>
 
+    <properties>
+        <kotlin.version>1.1.4-3</kotlin.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>pw.phylame.mala</groupId>
@@ -35,10 +39,14 @@
             <artifactId>beautyeye</artifactId>
             <version>3.7</version>
         </dependency>
+        <dependency>
+            <groupId>org.swinglabs.swingx</groupId>
+            <artifactId>swingx-core</artifactId>
+            <version>1.6.5</version>
+        </dependency>
     </dependencies>
     <build>
         <sourceDirectory>src/main/kotlin</sourceDirectory>
-        <testSourceDirectory>src/test/kotlin</testSourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
